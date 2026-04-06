@@ -16,9 +16,9 @@
                         <th class="text-right py-2">Budget</th>
                         <th class="text-right py-2">Total Spent</th>
                         <th class="text-right py-2">Status</th>
-                    </table>
+                    </tr>
                 </thead>
-                <tbody id="userTableBody">
+                <tbody>
                     @foreach($users as $user)
                     <tr class="user-row cursor-pointer hover:bg-gray-50 transition-colors" data-user-id="{{ $user->id }}">
                         <td class="py-2">{{ $user->name }}</td>
@@ -93,6 +93,7 @@
 </style>
 
 <script>
+    // Use the selected user from the controller (passed as $selectedUser)
     let currentUserId = {{ $selectedUser->id }};
     const users = @json($users);
 
@@ -110,7 +111,10 @@
     // Load user dashboard via AJAX
     function loadUserDashboard(userId) {
         fetch(`/admin/user/${userId}/dashboard`)
-            .then(response => response.text())
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.text();
+            })
             .then(html => {
                 const container = document.getElementById('userDashboardContainer');
                 container.innerHTML = html;
@@ -158,7 +162,7 @@
             .catch(error => console.error('Error loading logs:', error));
     }
 
-    // Attach click handlers to user rows
+    // Attach click handlers to user rows (using event delegation in case rows are re-rendered, but they are static)
     document.querySelectorAll('.user-row').forEach(row => {
         row.addEventListener('click', () => {
             const userId = row.dataset.userId;
@@ -177,9 +181,14 @@
     document.getElementById('downloadAllUsersPdfBtn').onclick = () => window.location.href = '{{ route('admin.download.all.users') }}';
 
     // Download single user PDF
-    document.getElementById('downloadSingleUserPdfBtn').onclick = () => {
-        window.location.href = '{{ route('admin.user.download.pdf', $selectedUser) }}';
-    };
+    // Store the route pattern
+const downloadUserPdfUrl = '{{ route("admin.user.download.pdf", ":id") }}';
+
+// Download single user PDF
+document.getElementById('downloadSingleUserPdfBtn').onclick = () => {
+    const url = downloadUserPdfUrl.replace(':id', currentUserId);
+    window.location.href = url;
+};
 
     // Log filters
     document.getElementById('filterLogsBtn').onclick = loadLogs;

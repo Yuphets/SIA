@@ -144,12 +144,11 @@ public function logsJson(Request $request)
     }
 
     public function downloadUserPdf(User $user)
-    {
-        $expenses = $user->expenses()->orderBy('expense_date', 'desc')->get();
-
-        $pdf = Pdf::loadView('pdf.user-report', compact('user', 'expenses'));
-        return $pdf->download($user->name . "_expenses.pdf");
-    }
+{
+    $expenses = $user->expenses()->orderBy('expense_date', 'desc')->get();
+    $pdf = Pdf::loadView('pdf.user-report', compact('user', 'expenses'));
+    return $pdf->download($user->name . "_expenses.pdf");
+}
 
     public function downloadAllUsersPdf()
     {
