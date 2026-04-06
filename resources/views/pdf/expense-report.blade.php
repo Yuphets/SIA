@@ -28,11 +28,11 @@
                 <td>{{ $expense->expense_date->format('Y-m-d') }}</td>
                 <td>{{ $expense->category }}</td>
                 <td>{{ $expense->description }}</td>
-                <td>₱{{ number_format($expense->amount, 2) }}</td>
+                <td>Php{{ number_format($expense->amount, 2) }}</td>
             </tr>
             @endforeach
         </tbody>
     </table>
-    <div class="total">Total: ₱{{ number_format($expenses->sum('amount'), 2) }}</div>
+    <div class="total">Total: Php{{ number_format($expenses->sum('amount'), 2) }}</div>
 </body>
 </html>

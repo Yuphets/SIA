@@ -16,7 +16,7 @@
                         <th class="text-right py-2">Budget</th>
                         <th class="text-right py-2">Total Spent</th>
                         <th class="text-right py-2">Status</th>
-                    </tr>
+                    </table>
                 </thead>
                 <tbody id="userTableBody">
                     @foreach($users as $user)
@@ -44,6 +44,7 @@
 
         <div class="pdf-buttons mb-4">
             <button id="downloadAllUsersPdfBtn" class="btn-primary"><i class="fas fa-download"></i> Download All Users Data (PDF)</button>
+            <button id="downloadSingleUserPdfBtn" class="btn-primary"><i class="fas fa-download"></i> Download Current User's Data (PDF)</button>
             <button id="refreshAdminViewBtn" class="btn-outline"><i class="fas fa-sync-alt"></i> Refresh</button>
         </div>
     </div>
@@ -92,7 +93,7 @@
 </style>
 
 <script>
-    let currentUserId = {{ $initialUserId }};
+    let currentUserId = {{ $selectedUser->id }};
     const users = @json($users);
 
     // Highlight active row
@@ -125,7 +126,8 @@
                     document.body.appendChild(newScript);
                     script.remove();
                 });
-            });
+            })
+            .catch(error => console.error('Error loading dashboard:', error));
     }
 
     // Load logs via AJAX
@@ -144,7 +146,7 @@
                     const row = tbody.insertRow();
                     row.insertCell(0).innerHTML = new Date(log.created_at).toLocaleString();
                     row.insertCell(1).innerHTML = log.username;
-                    row.insertCell(2).innerHTML = `<span class="px-2 py-1 rounded text-xs
+                    row.insertCell(2).innerHTML = `<span class="px-2 py-1 rounded text-xs 
                         ${log.action == 'ADD_EXPENSE' ? 'bg-green-100 text-green-700' : ''}
                         ${log.action == 'DELETE_EXPENSE' ? 'bg-red-100 text-red-700' : ''}
                         ${log.action == 'BUDGET_CHANGE' ? 'bg-blue-100 text-blue-700' : ''}
@@ -152,7 +154,8 @@
                         ${log.action}</span>`;
                     row.insertCell(3).innerHTML = log.details;
                 });
-            });
+            })
+            .catch(error => console.error('Error loading logs:', error));
     }
 
     // Attach click handlers to user rows
@@ -172,6 +175,11 @@
 
     // Download all users PDF
     document.getElementById('downloadAllUsersPdfBtn').onclick = () => window.location.href = '{{ route('admin.download.all.users') }}';
+
+    // Download single user PDF
+    document.getElementById('downloadSingleUserPdfBtn').onclick = () => {
+        window.location.href = '{{ route('admin.user.download.pdf', $selectedUser) }}';
+    };
 
     // Log filters
     document.getElementById('filterLogsBtn').onclick = loadLogs;

@@ -15,7 +15,7 @@
     <h1>Monthly Expense Report</h1>
     <p>User: {{ $user->name }}</p>
     <p>Month: {{ $month }}</p>
-    <p>Total: ₱{{ number_format($total, 2) }}</p>
+    <p>Total: Php{{ number_format($total, 2) }}</p>
     <table>
         <thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th></tr></thead>
         <tbody>
@@ -24,7 +24,7 @@
                 <td>{{ $expense->expense_date->format('Y-m-d') }}</td>
                 <td>{{ $expense->category }}</td>
                 <td>{{ $expense->description }}</td>
-                <td>₱{{ number_format($expense->amount, 2) }}</td>
+                <td>Php{{ number_format($expense->amount, 2) }}</td>
             </tr>
             @endforeach
         </tbody>

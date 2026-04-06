@@ -3,6 +3,7 @@
         $events = [];
     }
 @endphp
+
 <div class="stats-grid">
     <div class="stat-card"><h3><i class="fas fa-coins"></i> Total Expenses</h3><div class="stat-value">₱{{ number_format($totalExpenses, 2) }}</div></div>
     <div class="stat-card"><h3><i class="fas fa-bullhorn"></i> Recommended Limit</h3><div class="stat-value">₱{{ number_format($user->budget_limit, 2) }}</div></div>
@@ -77,10 +78,12 @@
         </div>
     </div>
 
+    @if(!$isAdminView)
     <div class="card">
         <div class="card-title"><i class="fas fa-chart-pie"></i> Looker Studio · Live Dashboard</div>
         <canvas id="categoryChart" style="max-height: 260px; width: 100%; margin-bottom: 16px;"></canvas>
     </div>
+    @endif
 </div>
 
 <div class="card" style="margin-bottom: 28px;">
@@ -96,69 +99,51 @@
     </div>
 </div>
 
+@if(!$isAdminView)
 <div class="dashboard-grid">
-   <div class="card">
-    <div class="card-title">
-        <i class="fab fa-google"></i> Google Calendar · Upcoming Events
-        @if($user->google_calendar_token && count($events) > 0)
-            <button id="toggleEventsBtn" class="btn-outline text-sm ml-2" style="padding: 4px 12px;">Hide Events</button>
-        @endif
-    </div>
-    @if($user->google_calendar_token)
-        <div id="eventsContainer">
-            @if(count($events) > 0)
-                <div class="space-y-3" id="eventsList">
-                    @foreach($events as $event)
-                        <div class="border-b pb-2">
-                            <strong>{{ $event->getSummary() }}</strong><br>
-                            <span class="text-sm text-gray-600">
-                                @if($event->getStart()->getDateTime())
-                                    {{ \Carbon\Carbon::parse($event->getStart()->getDateTime())->format('M d, Y H:i') }}
-                                    @if($event->getEnd())
-                                        - {{ \Carbon\Carbon::parse($event->getEnd()->getDateTime())->format('H:i') }}
-                                    @endif
-                                @else
-                                    All-day event: {{ $event->getStart()->getDate() }}
-                                @endif
-                            </span>
-                            @if($event->getDescription())
-                                <p class="text-sm mt-1">{{ \Illuminate\Support\Str::limit($event->getDescription(), 100) }}</p>
-                            @endif
-                        </div>
-                    @endforeach
-                </div>
-            @else
-                <p>No upcoming events found.</p>
+    <div class="card">
+        <div class="card-title">
+            <i class="fab fa-google"></i> Google Calendar · Upcoming Events
+            @if($user->google_calendar_token && count($events) > 0)
+                <button id="toggleEventsBtn" class="btn-outline text-sm ml-2" style="padding: 4px 12px;">Hide Events</button>
             @endif
         </div>
-        <div class="mt-3">
-            <a href="{{ route('google.calendar') }}" class="btn-outline text-sm">View Full Calendar</a>
-        </div>
-    @else
-        <p class="text-gray-600">Connect your Google Calendar to see upcoming bill reminders and events.</p>
-        @if(!$isAdminView)
-            <a href="{{ route('google.auth') }}" class="btn-primary">Connect Google Calendar</a>
+        @if($user->google_calendar_token)
+            <div id="eventsContainer">
+                @if(count($events) > 0)
+                    <div class="space-y-3" id="eventsList">
+                        @foreach($events as $event)
+                            <div class="border-b pb-2">
+                                <strong>{{ $event->getSummary() }}</strong><br>
+                                <span class="text-sm text-gray-600">
+                                    @if($event->getStart()->getDateTime())
+                                        {{ \Carbon\Carbon::parse($event->getStart()->getDateTime())->format('M d, Y H:i') }}
+                                        @if($event->getEnd())
+                                            - {{ \Carbon\Carbon::parse($event->getEnd()->getDateTime())->format('H:i') }}
+                                        @endif
+                                    @else
+                                        All-day event: {{ $event->getStart()->getDate() }}
+                                    @endif
+                                </span>
+                                @if($event->getDescription())
+                                    <p class="text-sm mt-1">{{ \Illuminate\Support\Str::limit($event->getDescription(), 100) }}</p>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <p>No upcoming events found.</p>
+                @endif
+            </div>
+            <div class="mt-3">
+                <a href="{{ route('google.calendar') }}" class="btn-outline text-sm">View Full Calendar</a>
+            </div>
+        @else
+            <p class="text-gray-600">Connect your Google Calendar to see upcoming bill reminders and events.</p>
+            @if(!$isAdminView)
+                <a href="{{ route('google.auth') }}" class="btn-primary">Connect Google Calendar</a>
+            @endif
         @endif
-    @endif
-</div>
-
-@if($user->google_calendar_token && count($events) > 0)
-<script>
-    const toggleBtn = document.getElementById('toggleEventsBtn');
-    const eventsContainer = document.getElementById('eventsContainer');
-    const eventsList = document.getElementById('eventsList');
-
-    toggleBtn.addEventListener('click', () => {
-        if (eventsList.style.display === 'none') {
-            eventsList.style.display = 'block';
-            toggleBtn.textContent = 'Hide Events';
-        } else {
-            eventsList.style.display = 'none';
-            toggleBtn.textContent = 'Show Events';
-        }
-    });
-</script>
-@endif
     </div>
 
     <div class="card">
@@ -170,17 +155,14 @@
         <div style="margin-top: 16px; font-size:0.85rem;"><i class="fas fa-microchip"></i> When budget ≥ 80%: popup + siren sound + email.</div>
     </div>
 </div>
+@endif
 
 <footer><i class="fas fa-check-circle" style="color:var(--md-gold);"></i> Systems Integration & Architecture – Mater Dei College</footer>
 
+@if(!$isAdminView)
 <script>
+    // Chart initialization (only for user view)
     const chartData = @json($chartData);
-    const budgetPercentage = {{ $budgetPercentage }};
-    const totalExpenses = {{ $totalExpenses }};
-    const remainingBudget = {{ $remainingBudget }};
-    const budgetLimit = {{ $user->budget_limit }};
-
-    // Chart initialization
     const ctx = document.getElementById('categoryChart').getContext('2d');
     new Chart(ctx, {
         type: 'bar',
@@ -195,6 +177,14 @@
         },
         options: { responsive: true, scales: { y: { beginAtZero: true } } }
     });
+</script>
+@endif
+
+<script>
+    // Shared JavaScript (budget update, monthly history, alerts)
+    const budgetPercentage = {{ $budgetPercentage }};
+    const totalExpenses = {{ $totalExpenses }};
+    const budgetLimit = {{ $user->budget_limit }};
 
     // Budget update
     document.getElementById('updateLimitBtn').onclick = function() {
@@ -209,7 +199,7 @@
         }
     };
 
-    // Monthly history
+    // Monthly history (works for both user and admin)
     function refreshMonthlyView() {
         const month = document.getElementById('monthPicker').value;
         const url = '{{ $isAdminView ? route('admin.user.monthly.expenses', $user) : route('expenses.download.monthly') }}?month=' + month;
@@ -231,7 +221,8 @@
 
     document.getElementById('filterMonthBtn').onclick = refreshMonthlyView;
     document.getElementById('downloadMonthPdfBtn').onclick = function() {
-        window.location.href = '{{ $isAdminView ? route('admin.user.download.monthly.pdf', $user) : route('expenses.download.monthly') }}?month=' + document.getElementById('monthPicker').value;
+        const month = document.getElementById('monthPicker').value;
+        window.location.href = '{{ $isAdminView ? route('admin.user.download.monthly.pdf', $user) : route('expenses.download.monthly') }}?month=' + month;
     };
     refreshMonthlyView();
 
@@ -250,4 +241,21 @@
         alertArea.style.cssText = 'background:#E9F5EB; border-left:4px solid #2C7A4D;';
         document.getElementById('liveAlertMsg').innerHTML = '✅ No alerts.';
     }
+
+    @if($user->google_calendar_token && count($events) > 0 && !$isAdminView)
+    // Toggle events (only for user view)
+    const toggleBtn = document.getElementById('toggleEventsBtn');
+    const eventsList = document.getElementById('eventsList');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+            if (eventsList.style.display === 'none') {
+                eventsList.style.display = 'block';
+                toggleBtn.textContent = 'Hide Events';
+            } else {
+                eventsList.style.display = 'none';
+                toggleBtn.textContent = 'Show Events';
+            }
+        });
+    }
+    @endif
 </script>

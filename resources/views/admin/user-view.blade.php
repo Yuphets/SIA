@@ -111,6 +111,7 @@
     <h2 class="text-xl font-bold mb-4">
         <i class="fab fa-google mr-2"></i> Google Calendar · Bill Reminders ({{ $user->name }})
     </h2>
+
     <iframe src="https://calendar.google.com/calendar/embed?src=en.philippines%23holiday%40group.v.calendar.google.com&ctz=Asia%2FManila"
             style="border: 0" width="100%" height="300" frameborder="0" scrolling="no">
     </iframe>

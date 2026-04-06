@@ -17,9 +17,42 @@ class AdminController extends Controller
     public function dashboard(Request $request)
 {
     $users = User::all();
-    $initialUserId = auth()->id(); // the logged‑in admin
+    // Get the selected user ID from the query string, default to the logged-in admin
+    $selectedUserId = $request->get('user', auth()->id());
+    $selectedUser = User::find($selectedUserId);
+    
+    // If the user does not exist (should not happen), fallback to the logged-in user
+    if (!$selectedUser) {
+        $selectedUser = auth()->user();
+    }
+    
+    // For the partial, we need the expenses and stats for the selected user
+    $expenses = $selectedUser->expenses()->orderBy('expense_date', 'desc')->get();
+    $totalExpenses = $selectedUser->getTotalExpenses();
+    $remainingBudget = $selectedUser->getRemainingBudget();
+    $budgetPercentage = $selectedUser->getBudgetPercentage();
+    $cooldownDays = $selectedUser->getBudgetChangeCooldownDays();
 
-    return view('admin.dashboard', compact('users', 'initialUserId'));
+    $categoryTotals = $selectedUser->expenses()
+        ->select('category', DB::raw('SUM(amount) as total'))
+        ->groupBy('category')
+        ->pluck('total', 'category')
+        ->toArray();
+
+    $chartData = [
+        'Food' => $categoryTotals['Food'] ?? 0,
+        'Transport' => $categoryTotals['Transport'] ?? 0,
+        'Utilities' => $categoryTotals['Utilities'] ?? 0,
+        'Entertainment' => $categoryTotals['Entertainment'] ?? 0,
+        'Others' => $categoryTotals['Others'] ?? 0,
+    ];
+
+    $logs = ActivityLog::orderBy('created_at', 'desc')->get();
+
+    return view('admin.dashboard', compact(
+        'users', 'selectedUser', 'expenses', 'totalExpenses', 'remainingBudget',
+        'budgetPercentage', 'cooldownDays', 'chartData', 'logs'
+    ));
 }
 
     public function userDashboardPartial(User $user, GoogleCalendarService $calendarService)

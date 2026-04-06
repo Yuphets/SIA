@@ -21,7 +21,7 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/expenses/{expense}', [ExpenseController::class, 'destroy'])->name('expenses.destroy');
     Route::put('/expenses/budget', [ExpenseController::class, 'updateBudget'])->name('expenses.budget.update');
     Route::get('/expenses/download-pdf', [ExpenseController::class, 'downloadPdf'])->name('expenses.download.pdf');
-    Route::post('/expenses/download-monthly-pdf', [ExpenseController::class, 'downloadMonthlyPdf'])->name('expenses.download.monthly');
+    Route::get('/expenses/download-monthly-pdf', [ExpenseController::class, 'downloadMonthlyPdf'])->name('expenses.download.monthly');
 
     // Google Calendar routes
     Route::prefix('google')->name('google.')->group(function () {

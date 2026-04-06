@@ -16,7 +16,7 @@
     <h1>All Users Expense Report</h1>
     @foreach($users as $user)
         <h2>{{ $user->name }} ({{ $user->email }})</h2>
-        <p>Budget: ₱{{ number_format($user->budget_limit, 2) }} | Total Spent: ₱{{ number_format($user->getTotalExpenses(), 2) }}</p>
+        <p>Budget: Php{{ number_format($user->budget_limit, 2) }} | Total Spent: Php{{ number_format($user->getTotalExpenses(), 2) }}</p>
         <table>
             <thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th></tr></thead>
             <tbody>
@@ -25,7 +25,7 @@
                     <td>{{ $expense->expense_date->format('Y-m-d') }}</td>
                     <td>{{ $expense->category }}</td>
                     <td>{{ $expense->description }}</td>
-                    <td>₱{{ number_format($expense->amount, 2) }}</td>
+                    <td>Php{{ number_format($expense->amount, 2) }}</td>
                 </tr>
                 @endforeach
             </tbody>
