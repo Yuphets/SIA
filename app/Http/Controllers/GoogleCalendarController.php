@@ -13,6 +13,24 @@ class GoogleCalendarController extends Controller
         return redirect($calendarService->getAuthUrl());
     }
 
+    public function disconnect()
+{
+    $user = auth()->user();
+    
+    // Clear the stored token
+    $user->google_calendar_token = null;
+    $user->save();
+    
+    ActivityLog::log(
+        $user->id,
+        $user->name,
+        'GOOGLE_CALENDAR_DISCONNECT',
+        'Disconnected Google Calendar'
+    );
+    
+    return redirect()->route('expenses.index')->with('success', 'Google Calendar disconnected successfully.');
+}
+
     public function handleGoogleCallback(Request $request, GoogleCalendarService $calendarService)
     {
         $code = $request->get('code');
@@ -42,4 +60,6 @@ class GoogleCalendarController extends Controller
 
         return view('expenses.calendar', compact('embedUrl', 'events'));
     }
+
+    
 }

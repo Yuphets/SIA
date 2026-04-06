@@ -11,6 +11,8 @@ Route::get('/', function () {
 
 Route::middleware(['auth'])->group(function () {
     // Dashboard redirect
+            Route::get('/google/disconnect', [GoogleCalendarController::class, 'disconnect'])->name('google.disconnect');
+
     Route::get('/dashboard', function () {
         return redirect()->route('expenses.index');
     })->name('dashboard');

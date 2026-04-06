@@ -135,8 +135,9 @@
                     <p>No upcoming events found.</p>
                 @endif
             </div>
-            <div class="mt-3">
+            <div class="mt-3 flex gap-2">
                 <a href="{{ route('google.calendar') }}" class="btn-outline text-sm">View Full Calendar</a>
+                <a href="{{ route('google.disconnect') }}" class="btn-outline text-sm text-red-600 hover:bg-red-50" onclick="return confirm('Disconnect Google Calendar? You will need to reconnect to see events.')">Disconnect</a>
             </div>
         @else
             <p class="text-gray-600">Connect your Google Calendar to see upcoming bill reminders and events.</p>
