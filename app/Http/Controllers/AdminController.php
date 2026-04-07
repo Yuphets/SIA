@@ -20,12 +20,12 @@ class AdminController extends Controller
     // Get the selected user ID from the query string, default to the logged-in admin
     $selectedUserId = $request->get('user', auth()->id());
     $selectedUser = User::find($selectedUserId);
-    
+
     // If the user does not exist (should not happen), fallback to the logged-in user
     if (!$selectedUser) {
         $selectedUser = auth()->user();
     }
-    
+
     // For the partial, we need the expenses and stats for the selected user
     $expenses = $selectedUser->expenses()->orderBy('expense_date', 'desc')->get();
     $totalExpenses = $selectedUser->getTotalExpenses();

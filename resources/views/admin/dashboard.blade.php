@@ -6,41 +6,43 @@
         <div class="card-title"><i class="fas fa-user-shield"></i> Admin Dashboard</div>
 
         <!-- User Table (clickable rows) -->
-        <div class="overflow-x-auto mb-6">
-            <table class="w-full expense-table">
-                <thead>
-                    <tr class="border-b">
-                        <th class="text-left py-2">Name</th>
-                        <th class="text-left py-2">Email</th>
-                        <th class="text-left py-2">Role</th>
-                        <th class="text-right py-2">Budget</th>
-                        <th class="text-right py-2">Total Spent</th>
-                        <th class="text-right py-2">Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($users as $user)
-                    <tr class="user-row cursor-pointer hover:bg-gray-50 transition-colors" data-user-id="{{ $user->id }}">
-                        <td class="py-2">{{ $user->name }}</td>
-                        <td class="py-2">{{ $user->email }}</td>
-                        <td class="py-2">{{ ucfirst($user->role) }}</td>
-                        <td class="py-2 text-right">₱{{ number_format($user->budget_limit, 2) }}</td>
-                        <td class="py-2 text-right">₱{{ number_format($user->getTotalExpenses(), 2) }}</td>
-                        <td class="py-2 text-right">
-                            @php $percent = $user->getBudgetPercentage(); @endphp
-                            @if($percent >= 100)
-                                <span class="text-red-600">Over budget</span>
-                            @elseif($percent >= 80)
-                                <span class="text-orange-600">Near limit</span>
-                            @else
-                                <span class="text-green-600">Good</span>
-                            @endif
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
+        <div class="mb-6">
+    <div class="overflow-x-auto" style="max-height: 400px; overflow-y: auto;">
+        <table class="w-full expense-table">
+            <thead class="sticky top-0 bg-white shadow-sm">
+                <tr class="border-b">
+                    <th class="text-left py-2">Name</th>
+                    <th class="text-left py-2">Email</th>
+                    <th class="text-left py-2">Role</th>
+                    <th class="text-right py-2">Budget</th>
+                    <th class="text-right py-2">Total Spent</th>
+                    <th class="text-right py-2">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($users as $user)
+                <tr class="user-row cursor-pointer hover:bg-gray-50 transition-colors" data-user-id="{{ $user->id }}">
+                    <td class="py-2">{{ $user->name }}</td>
+                    <td class="py-2">{{ $user->email }}</td>
+                    <td class="py-2">{{ ucfirst($user->role) }}</td>
+                    <td class="py-2 text-right">₱{{ number_format($user->budget_limit, 2) }}</td>
+                    <td class="py-2 text-right">₱{{ number_format($user->getTotalExpenses(), 2) }}</td>
+                    <td class="py-2 text-right">
+                        @php $percent = $user->getBudgetPercentage(); @endphp
+                        @if($percent >= 100)
+                            <span class="text-red-600">Over budget</span>
+                        @elseif($percent >= 80)
+                            <span class="text-orange-600">Near limit</span>
+                        @else
+                            <span class="text-green-600">Good</span>
+                        @endif
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+</div>
 
         <div class="pdf-buttons mb-4">
             <button id="downloadAllUsersPdfBtn" class="btn-primary"><i class="fas fa-download"></i> Download All Users Data (PDF)</button>
@@ -109,30 +111,52 @@
     }
 
     // Load user dashboard via AJAX
-    function loadUserDashboard(userId) {
-        fetch(`/admin/user/${userId}/dashboard`)
-            .then(response => {
-                if (!response.ok) throw new Error('Network response was not ok');
-                return response.text();
-            })
-            .then(html => {
-                const container = document.getElementById('userDashboardContainer');
-                container.innerHTML = html;
-                // Execute any <script> tags inside the loaded content
-                const scripts = container.querySelectorAll('script');
-                scripts.forEach(script => {
-                    const newScript = document.createElement('script');
-                    if (script.src) {
-                        newScript.src = script.src;
-                    } else {
-                        newScript.textContent = script.textContent;
-                    }
-                    document.body.appendChild(newScript);
-                    script.remove();
-                });
-            })
-            .catch(error => console.error('Error loading dashboard:', error));
-    }
+    // Load user dashboard via AJAX
+function loadUserDashboard(userId) {
+    fetch(`/admin/user/${userId}/dashboard`)
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.text();
+        })
+        .then(html => {
+            const container = document.getElementById('userDashboardContainer');
+            container.innerHTML = html;
+
+            // Update the "Download This Month's PDF" button to use the current user's ID
+            const downloadMonthBtn = document.getElementById('downloadMonthPdfBtn');
+            if (downloadMonthBtn) {
+                // Remove existing event listeners by cloning and replacing
+                const newBtn = downloadMonthBtn.cloneNode(true);
+                downloadMonthBtn.parentNode.replaceChild(newBtn, downloadMonthBtn);
+                newBtn.onclick = function() {
+                    const month = document.getElementById('monthPicker').value;
+                    window.location.href = `/admin/users/${currentUserId}/monthly-pdf?month=${month}`;
+                };
+            }
+
+            // Also update the "Download Data (PDF)" button in the expense ledger
+            const downloadDataBtn = document.querySelector('#userDashboardContainer .pdf-buttons a.btn-primary');
+            if (downloadDataBtn) {
+                const newDataBtn = downloadDataBtn.cloneNode(true);
+                downloadDataBtn.parentNode.replaceChild(newDataBtn, downloadDataBtn);
+                newDataBtn.href = `/admin/users/${currentUserId}/download-pdf`;
+            }
+
+            // Execute any <script> tags inside the loaded content
+            const scripts = container.querySelectorAll('script');
+            scripts.forEach(script => {
+                const newScript = document.createElement('script');
+                if (script.src) {
+                    newScript.src = script.src;
+                } else {
+                    newScript.textContent = script.textContent;
+                }
+                document.body.appendChild(newScript);
+                script.remove();
+            });
+        })
+        .catch(error => console.error('Error loading dashboard:', error));
+}
 
     // Load logs via AJAX
     function loadLogs() {
@@ -150,7 +174,7 @@
                     const row = tbody.insertRow();
                     row.insertCell(0).innerHTML = new Date(log.created_at).toLocaleString();
                     row.insertCell(1).innerHTML = log.username;
-                    row.insertCell(2).innerHTML = `<span class="px-2 py-1 rounded text-xs 
+                    row.insertCell(2).innerHTML = `<span class="px-2 py-1 rounded text-xs
                         ${log.action == 'ADD_EXPENSE' ? 'bg-green-100 text-green-700' : ''}
                         ${log.action == 'DELETE_EXPENSE' ? 'bg-red-100 text-red-700' : ''}
                         ${log.action == 'BUDGET_CHANGE' ? 'bg-blue-100 text-blue-700' : ''}
@@ -181,7 +205,7 @@
     document.getElementById('downloadAllUsersPdfBtn').onclick = () => window.location.href = '{{ route('admin.download.all.users') }}';
 
     // Download single user PDF
-    // Store the route pattern
+// Store the route pattern
 const downloadUserPdfUrl = '{{ route("admin.user.download.pdf", ":id") }}';
 
 // Download single user PDF

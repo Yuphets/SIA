@@ -82,6 +82,30 @@ class ExpenseController extends Controller
         return redirect()->route('expenses.index')->with('success', 'Expense added successfully!');
     }
 
+    public function getMonthlyExpenses(Request $request)
+{
+    $user = auth()->user();
+    $month = $request->query('month', date('Y-m'));
+    $expenses = $user->expenses()
+        ->whereYear('expense_date', substr($month, 0, 4))
+        ->whereMonth('expense_date', substr($month, 5, 2))
+        ->orderBy('expense_date', 'desc')
+        ->get();
+    return response()->json($expenses);
+}
+
+public function getMonthlyData(Request $request)
+{
+    $user = auth()->user();
+    $month = $request->query('month', date('Y-m'));
+    $expenses = $user->expenses()
+        ->whereYear('expense_date', substr($month, 0, 4))
+        ->whereMonth('expense_date', substr($month, 5, 2))
+        ->orderBy('expense_date', 'desc')
+        ->get();
+    return response()->json($expenses);
+}
+
     public function destroy(Expense $expense)
     {
         /** @var User $user */

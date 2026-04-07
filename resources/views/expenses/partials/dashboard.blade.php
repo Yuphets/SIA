@@ -38,31 +38,39 @@
 </div>
 
 <div class="dashboard-grid">
-    <div class="card">
-        <div class="card-title"><i class="fas fa-table"></i> Google Sheets · Expense Ledger</div>
-        <div style="overflow-x: auto;">
-            <table class="expense-table">
-                <thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount (₱)</th><th></th></tr></thead>
-                <tbody id="expenseTbody">
-                    @foreach($expenses as $expense)
-                    <tr>
-                        <td>{{ $expense->expense_date->format('Y-m-d') }}</td>
-                        <td><span style="background:#F0F3F9; padding:4px 8px; border-radius:30px;">{{ $expense->category }}</span></td>
-                        <td>{{ $expense->description }}</td>
-                        <td class="text-right">₱{{ number_format($expense->amount, 2) }}</td>
-                        <td>
-                            @if(!$isAdminView || ($isAdminView && $user->id == auth()->id()))
-                                <form method="POST" action="{{ route('expenses.destroy', $expense) }}" onsubmit="return confirm('Delete this expense?')">
-                                    @csrf @method('DELETE')
-                                    <button type="submit" class="delete-btn"><i class="fas fa-trash-alt"></i></button>
-                                </form>
-                            @endif
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
+   <div class="card">
+    <div class="card-title"><i class="fas fa-table"></i> Google Sheets · Expense Ledger</div>
+    <div style="max-height: 400px; overflow-y: auto; overflow-x: auto;">
+        <table class="expense-table w-full">
+            <thead class="sticky top-0 bg-white shadow-sm">
+                <tr class="border-b">
+                    <th class="text-left py-2">Date</th>
+                    <th class="text-left py-2">Category</th>
+                    <th class="text-left py-2">Description</th>
+                    <th class="text-right py-2">Amount (₱)</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="expenseTbody">
+                @foreach($expenses as $expense)
+                <tr class="border-b">
+                    <td class="py-2">{{ $expense->expense_date->format('Y-m-d') }}</td>
+                    <td class="py-2"><span style="background:#F0F3F9; padding:4px 8px; border-radius:30px;">{{ $expense->category }}</span></td>
+                    <td class="py-2">{{ $expense->description }}</td>
+                    <td class="py-2 text-right">₱{{ number_format($expense->amount, 2) }}</td>
+                    <td class="py-2">
+                        @if(!$isAdminView || ($isAdminView && $user->id == auth()->id()))
+                            <form method="POST" action="{{ route('expenses.destroy', $expense) }}" onsubmit="return confirm('Delete this expense?')">
+                                @csrf @method('DELETE')
+                                <button type="submit" class="delete-btn"><i class="fas fa-trash-alt"></i></button>
+                            </form>
+                        @endif
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
         @if(!$isAdminView || ($isAdminView && $user->id == auth()->id()))
             <form method="POST" action="{{ route('expenses.store') }}" class="add-form">
                 @csrf
@@ -160,94 +168,147 @@
 
 <footer><i class="fas fa-check-circle" style="color:var(--md-gold);"></i> Systems Integration & Architecture – Mater Dei College</footer>
 
-@if(!$isAdminView)
-<script>
-    // Chart initialization (only for user view)
-    const chartData = @json($chartData);
-    const ctx = document.getElementById('categoryChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: ['Food', 'Transport', 'Utilities', 'Entertainment', 'Others'],
-            datasets: [{
-                label: 'Expenses (₱)',
-                data: [chartData.Food, chartData.Transport, chartData.Utilities, chartData.Entertainment, chartData.Others],
-                backgroundColor: '#0B2B4F',
-                borderRadius: 8
-            }]
-        },
-        options: { responsive: true, scales: { y: { beginAtZero: true } } }
-    });
-</script>
-@endif
 
 <script>
-    // Shared JavaScript (budget update, monthly history, alerts)
+(() => {
+    let chartInstance = null;
+
+    function initChart() {
+        const canvas = document.getElementById('categoryChart');
+        if (!canvas) return;
+
+        if (chartInstance) chartInstance.destroy();
+
+        const chartData = @json($chartData);
+        chartInstance = new Chart(canvas.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: ['Food', 'Transport', 'Utilities', 'Entertainment', 'Others'],
+                datasets: [{
+                    label: 'Expenses (PHP)',
+                    data: [chartData.Food, chartData.Transport, chartData.Utilities, chartData.Entertainment, chartData.Others],
+                    backgroundColor: '#0B2B4F',
+                    borderRadius: 8
+                }]
+            },
+            options: { responsive: true, scales: { y: { beginAtZero: true } } }
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initChart);
+    } else {
+        initChart();
+    }
+
     const budgetPercentage = {{ $budgetPercentage }};
     const totalExpenses = {{ $totalExpenses }};
     const budgetLimit = {{ $user->budget_limit }};
 
-    // Budget update
-    document.getElementById('updateLimitBtn').onclick = function() {
-        const newLimit = parseFloat(document.getElementById('limitInput').value);
-        if (isNaN(newLimit) || newLimit <= 0) return;
-        if (confirm(`Are you sure you want to change the budget limit from ₱${budgetLimit.toFixed(2)} to ₱${newLimit.toFixed(2)}? You will not be able to change it again for 7 days.`)) {
-            fetch('{{ $isAdminView ? route('admin.user.budget.update', $user) : route('expenses.budget.update') }}', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                body: JSON.stringify({ budget_limit: newLimit })
-            }).then(() => location.reload());
-        }
-    };
+    const updateLimitBtn = document.getElementById('updateLimitBtn');
+    if (updateLimitBtn) {
+        updateLimitBtn.onclick = function() {
+            const newLimit = parseFloat(document.getElementById('limitInput').value);
+            if (isNaN(newLimit) || newLimit <= 0) return;
 
-    // Monthly history (works for both user and admin)
+            if (confirm(`Are you sure you want to change the budget limit from PHP ${budgetLimit.toFixed(2)} to PHP ${newLimit.toFixed(2)}? You will not be able to change it again for 7 days.`)) {
+                fetch('{{ $isAdminView ? route('admin.user.budget.update', $user) : route('expenses.budget.update') }}', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                    body: JSON.stringify({ budget_limit: newLimit })
+                }).then(() => location.reload());
+            }
+        };
+    }
+
     function refreshMonthlyView() {
-        const month = document.getElementById('monthPicker').value;
-        const url = '{{ $isAdminView ? route('admin.user.monthly.expenses', $user) : route('expenses.download.monthly') }}?month=' + month;
-        fetch(url, { headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' } })
-            .then(res => res.json())
+        const monthPicker = document.getElementById('monthPicker');
+        const tbody = document.getElementById('monthlyExpenseTbody');
+        if (!monthPicker || !tbody) return;
+
+        const month = monthPicker.value;
+        let url;
+
+        if ({{ $isAdminView ? 'true' : 'false' }}) {
+            url = '{{ route('admin.user.monthly.data', $user) }}?month=' + month;
+        } else {
+            url = '{{ route('expenses.monthly.data') }}?month=' + month;
+        }
+
+        fetch(url, { headers: { 'Accept': 'application/json' } })
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok: ' + response.status);
+                return response.json();
+            })
             .then(data => {
-                const tbody = document.getElementById('monthlyExpenseTbody');
                 tbody.innerHTML = '';
-                if (data.length === 0) tbody.innerHTML = '<tr><td colspan="4">No expenses for this month</td></tr>';
-                else data.forEach(exp => {
+
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4">No expenses for this month</td></tr>';
+                    return;
+                }
+
+                data.forEach(exp => {
                     const row = tbody.insertRow();
                     row.insertCell(0).innerText = exp.expense_date;
                     row.insertCell(1).innerText = exp.category;
                     row.insertCell(2).innerText = exp.description;
-                    row.insertCell(3).innerText = `₱${parseFloat(exp.amount).toFixed(2)}`;
+                    row.insertCell(3).innerText = `PHP ${parseFloat(exp.amount).toFixed(2)}`;
                 });
+            })
+            .catch(error => {
+                console.error('Error loading monthly expenses:', error);
+                tbody.innerHTML = '<tr><td colspan="4">Error loading data. Please try again.</td></tr>';
             });
     }
 
-    document.getElementById('filterMonthBtn').onclick = refreshMonthlyView;
-    document.getElementById('downloadMonthPdfBtn').onclick = function() {
-        const month = document.getElementById('monthPicker').value;
-        window.location.href = '{{ $isAdminView ? route('admin.user.download.monthly.pdf', $user) : route('expenses.download.monthly') }}?month=' + month;
-    };
+    const filterMonthBtn = document.getElementById('filterMonthBtn');
+    if (filterMonthBtn) {
+        filterMonthBtn.onclick = refreshMonthlyView;
+    }
+
+    const downloadMonthPdfBtn = document.getElementById('downloadMonthPdfBtn');
+    if (downloadMonthPdfBtn) {
+        downloadMonthPdfBtn.onclick = function() {
+            const month = document.getElementById('monthPicker').value;
+            let url;
+
+            if ({{ $isAdminView ? 'true' : 'false' }}) {
+                url = '{{ route('admin.user.download.monthly.pdf', $user) }}?month=' + month;
+            } else {
+                url = '{{ route('expenses.download.monthly') }}?month=' + month;
+            }
+
+            window.location.href = url;
+        };
+    }
+
     refreshMonthlyView();
 
-    // Alert messages
     const alertArea = document.getElementById('dynamicAlertArea');
-    if (budgetPercentage >= 100) {
-        alertArea.innerHTML = '<i class="fas fa-bell"></i> ⚠️ CRITICAL: Exceeded budget by ₱' + (totalExpenses - budgetLimit).toFixed(2);
-        alertArea.style.cssText = 'background:#FCE4E4; border-left:4px solid #D9534F;';
-        document.getElementById('liveAlertMsg').innerHTML = 'Budget exceeded!';
-    } else if (budgetPercentage >= 80) {
-        alertArea.innerHTML = '<i class="fas fa-bell"></i> ⚠️ WARNING: Used ' + budgetPercentage.toFixed(1) + '% of budget (₱' + totalExpenses.toFixed(2) + ' / ₱' + budgetLimit.toFixed(2) + ')';
-        alertArea.style.cssText = 'background:#FFF2DF; border-left:4px solid #F7B84D;';
-        document.getElementById('liveAlertMsg').innerHTML = 'Near limit';
-    } else {
-        alertArea.innerHTML = '<i class="fas fa-bell"></i> ✅ Healthy spending: ' + budgetPercentage.toFixed(1) + '% used.';
-        alertArea.style.cssText = 'background:#E9F5EB; border-left:4px solid #2C7A4D;';
-        document.getElementById('liveAlertMsg').innerHTML = '✅ No alerts.';
+    const liveAlertMsg = document.getElementById('liveAlertMsg');
+
+    if (alertArea) {
+        if (budgetPercentage >= 100) {
+            alertArea.innerHTML = '<i class="fas fa-bell"></i> CRITICAL: Exceeded budget by PHP ' + (totalExpenses - budgetLimit).toFixed(2);
+            alertArea.style.cssText = 'background:#FCE4E4; border-left:4px solid #D9534F;';
+            if (liveAlertMsg) liveAlertMsg.innerHTML = 'Budget exceeded!';
+        } else if (budgetPercentage >= 80) {
+            alertArea.innerHTML = '<i class="fas fa-bell"></i> WARNING: Used ' + budgetPercentage.toFixed(1) + '% of budget (PHP ' + totalExpenses.toFixed(2) + ' / PHP ' + budgetLimit.toFixed(2) + ')';
+            alertArea.style.cssText = 'background:#FFF2DF; border-left:4px solid #F7B84D;';
+            if (liveAlertMsg) liveAlertMsg.innerHTML = 'Near limit';
+        } else {
+            alertArea.innerHTML = '<i class="fas fa-bell"></i> Healthy spending: ' + budgetPercentage.toFixed(1) + '% used.';
+            alertArea.style.cssText = 'background:#E9F5EB; border-left:4px solid #2C7A4D;';
+            if (liveAlertMsg) liveAlertMsg.innerHTML = 'No alerts.';
+        }
     }
 
     @if($user->google_calendar_token && count($events) > 0 && !$isAdminView)
-    // Toggle events (only for user view)
     const toggleBtn = document.getElementById('toggleEventsBtn');
     const eventsList = document.getElementById('eventsList');
-    if (toggleBtn) {
+
+    if (toggleBtn && eventsList) {
         toggleBtn.addEventListener('click', () => {
             if (eventsList.style.display === 'none') {
                 eventsList.style.display = 'block';
@@ -259,4 +320,6 @@
         });
     }
     @endif
+})();
 </script>
+

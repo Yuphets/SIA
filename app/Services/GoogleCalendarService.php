@@ -120,6 +120,17 @@ class GoogleCalendarService
         return null;
     }
 
+    public function getPrimaryCalendarWebUrl(User $user)
+    {
+        $primary = $this->getPrimaryCalendar($user);
+        if (!$primary) {
+            return null;
+        }
+
+        $calendarId = urlencode($primary->getId());
+        return "https://calendar.google.com/calendar/u/0/r?cid={$calendarId}";
+    }
+
     public function getUserCalendarEvents(User $user, $maxResults = 10)
     {
         if (!$this->setAccessToken($user)) {

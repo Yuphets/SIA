@@ -55,10 +55,18 @@ class GoogleCalendarController extends Controller
     public function viewCalendar(GoogleCalendarService $calendarService)
     {
         $user = auth()->user();
-        $embedUrl = $calendarService->getPrimaryCalendarEmbedUrl($user);
-        $events = $calendarService->getUserCalendarEvents($user);
+        $isConnected = !empty($user->google_calendar_token);
+        $events = null;
+        $calendarWebUrl = 'https://calendar.google.com/calendar/u/0/r';
+        $connectionIssue = false;
 
-        return view('expenses.calendar', compact('embedUrl', 'events'));
+        if ($isConnected) {
+            $events = $calendarService->getUserCalendarEvents($user, 25);
+            $calendarWebUrl = $calendarService->getPrimaryCalendarWebUrl($user) ?? $calendarWebUrl;
+            $connectionIssue = $events === null;
+        }
+
+        return view('expenses.calendar', compact('events', 'calendarWebUrl', 'isConnected', 'connectionIssue'));
     }
 
     
